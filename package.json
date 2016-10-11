@@ -1,0 +1,23 @@
+{
+  "name": "gulp-haxe",
+  "version": "0.0.0",
+  "description": "Haxe for Gulp",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/benmerckx/gulp-haxe.git"
+  },
+  "keywords": [
+    "gulpplugin",
+    "gulp",
+    "haxe"
+  ],
+  "author": "Ben Merckx",
+  "license": "MIT",
+  "dependencies": {
+    "each-async": "^1.0.0",
+    "gulp-util": "^3.0.4",
+    "haxe": "4.0.0",
+    "os-tmpdir": "^1.0.2"
+  }
+}

@@ -1,0 +1,5 @@
+/bin
+/node_modules
+/build.hxml
+/Main.hx
+/gulpfile.js
