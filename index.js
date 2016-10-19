@@ -99,7 +99,7 @@ function toArgs(hxml) {
 			})
 		} else {
 			reponse.push(cmd)
-			reponse.push(value)
+			if(value) reponse.push(value)
 		}
 	})
 	return reponse
