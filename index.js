@@ -8,8 +8,8 @@ const Readable = require('stream').Readable
 const osTmpdir = require('os-tmpdir')
 const md5Hex = require('md5-hex')
 const glob = require('glob')
-
-const applySourceMap = require('vinyl-sourcemaps-apply')
+const convert = require('convert-source-map')
+const apply = require('vinyl-sourcemaps-apply')
 
 const TARGETS = ['js', 'as3', 'swf', 'neko', 'php', 'cpp', 'cs', 'java', 'python', 'lua', 'hl']
 
@@ -116,16 +116,19 @@ function addFile(file, location, done, sourceMaps) {
 			base: '.',
 			path: filePath
 		})
-		vinylFile.contents = data
 
 		if(sourceMaps){
-			fs.readFile(location.output + '.map', 'utf8', function (err, data) {
-				applySourceMap(vinylFile, data);
-				done(null, vinylFile)
-			});
+			let fileString = data.toString('utf-8')
+			const map = convert.fromMapFileSource( fileString, path.dirname(location.output) )
+			fileString = convert.removeMapFileComments( fileString )
+			fileString += map.toComment()
+			data = new Buffer( fileString )
+			apply(vinylFile, map.toJSON())
 		}
-		else
-			done(null, vinylFile)
+
+		vinylFile.contents = data
+
+		done(null, vinylFile)
 	})
 }
 
