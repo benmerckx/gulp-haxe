@@ -62,8 +62,10 @@ function readHxml(source, cb) {
 			const parts = command.split(' ')
 			const cmd = parts.shift()
 			if (cmd.substr(0, 1) != '-')
-				return;
-				// throw 'To be implemented'
+				if(/^\s*$/.test(cmd))
+					return;
+				else
+					throw 'To be implemented'
 			const key = cmd.substr(1)
 			const value = parts.join(' ')
 
