@@ -33,6 +33,16 @@ function haxeError(target, data) {
 	})
 }
 
+function combine(a, b) {
+	Object.keys(b).forEach(key => {
+		if (key in a)
+			a[key] = [].concat(a[key], b[key])
+		else
+			a[key] = b[key]
+	})
+	return a
+}
+
 function readHxml(source, cb) {
 	if (typeof source != 'string') {
 		if (Array.isArray(source)) return cb(source)
@@ -63,17 +73,17 @@ function readHxml(source, cb) {
 					current = {}
 					break
 				case '-next':
-					response.push(Object.assign(current, each))
+					response.push(combine(current, each))
 					current = {}
 					break
 				default:
 					const obj = {}
 					obj[key] = value
-					Object.assign(current, obj)
+					combine(current, obj)
 			}
 		})
 
-		response.push(Object.assign(current, each))
+		response.push(combine(current, each))
 		cb(response)
 	})
 }
