@@ -8,6 +8,8 @@ const Readable = require('stream').Readable
 const osTmpdir = require('os-tmpdir')
 const md5Hex = require('md5-hex')
 const glob = require('glob')
+const convert = require('convert-source-map')
+const apply = require('vinyl-sourcemaps-apply')
 
 const TARGETS = ['js', 'as3', 'swf', 'neko', 'php', 'cpp', 'cs', 'java', 'python', 'lua', 'hl']
 
@@ -60,7 +62,10 @@ function readHxml(source, cb) {
 			const parts = command.split(' ')
 			const cmd = parts.shift()
 			if (cmd.substr(0, 1) != '-')
-				throw 'To be implemented'
+				if(/^\s*$/.test(cmd))
+					return;
+				else
+					throw 'To be implemented'
 			const key = cmd.substr(1)
 			const value = parts.join(' ')
 
@@ -98,13 +103,13 @@ function toArgs(hxml) {
 			})
 		} else {
 			reponse.push(cmd)
-			reponse.push(value)
+			if(value) reponse.push(value)
 		}
 	})
 	return reponse
 }
 
-function addFile(file, location, done) {
+function addFile(file, location, done, sourceMaps) {
 	fs.readFile(file, function (err, data) {
 		if (err) return done(err)
 		const filePath = path.join(location.original, path.relative(location.output, file))
@@ -113,12 +118,23 @@ function addFile(file, location, done) {
 			base: '.',
 			path: filePath
 		})
+
+		if(sourceMaps){
+			let fileString = data.toString('utf-8')
+			const map = convert.fromMapFileSource( fileString, path.dirname(location.output) )
+			fileString = convert.removeMapFileComments( fileString )
+			fileString += map.toComment()
+			data = new Buffer( fileString )
+			apply(vinylFile, map.toJSON())
+		}
+
 		vinylFile.contents = data
+
 		done(null, vinylFile)
 	})
 }
 
-function addFiles(stream, files, location, done) {
+function addFiles(stream, files, location, done, sourceMaps) {
 	eachAsync(files, function (path, _, next) {
 		fs.stat(path, (err, stats) => {
 			if (err) return next(err)
@@ -127,7 +143,7 @@ function addFiles(stream, files, location, done) {
 				if (err) return next(err)
 				stream.push(file)
 				next()
-			})
+			}, sourceMaps)
 		})
 	}, done)
 }
@@ -156,13 +172,14 @@ function compile(stream, hxml, next) {
 		fs.stat(location.output, (err, stats) => {
 			if (err) return next(err)
 			const files = []
+			const sourceMaps = Object.keys(hxml).indexOf('debug') > -1 && target == 'js';
 			if (stats.isDirectory())
 				glob(path.join(location.output, '**', '*'), (err, files) => {
 					if (err) return next(err)
-					addFiles(stream, files, location, next)
+					addFiles(stream, files, location, next, sourceMaps)
 				})
-			else 
-				addFiles(stream, [location.output], location, next)
+			else
+				addFiles(stream, [location.output], location, next, sourceMaps)
 		})
 	})
 }
