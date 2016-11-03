@@ -33,13 +33,13 @@ gulp.task('compile', function () {
 // Compile multiple targets
 
 gulp.task('compile', function () {
-  return haxe({
+  return haxe([{
   	main: 'Client',
   	js: 'assets/main.js'
   }, {
   	main: 'Server',
   	php: 'server'
-  })
+  }])
     .pipe(gulp.dest('public'))
 })
 ```
