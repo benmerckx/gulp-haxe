@@ -1,5 +1,6 @@
 'use strict'
 const haxeBinary = require('haxe').haxe
+const haxelib = require('haxe').haxelib
 const gutil = require('gulp-util')
 const fs = require('fs')
 const path = require('path')
@@ -10,25 +11,16 @@ const md5Hex = require('md5-hex')
 const glob = require('glob')
 const convert = require('convert-source-map')
 const apply = require('vinyl-sourcemaps-apply')
+const lib = require('./lib')
 
 const TARGETS = ['js', 'as3', 'swf', 'neko', 'php', 'cpp', 'cs', 'java', 'python', 'lua', 'hl']
-
+const libCache = {}
 
 function haxeError(target, data) {
 	gutil.log(' ')
 	gutil.log(gutil.colors.red('['+target+'] Failed to compile'))
 	gutil.log(' ')
-	data.toString().split('\n').forEach(function (line) {
-		/*if (!line) return
-		const parts = line.split(':'),
-			file = parts.shift(),
-			nr = parts.shift(),
-			chars = parts.shift()
-
-		gutil.log(
-			gutil.colors.green('['+file+':'+nr+']') +
-			parts.join(':')
-		)*/
+	data.toString().split('\n').forEach(line => {
 		gutil.log(gutil.colors.green(line))
 	})
 }
@@ -145,40 +137,82 @@ function addFiles(stream, files, location, done, sourceMaps) {
 	}, done)
 }
 
+function installLib(name, _, next) {
+	if (name in libCache)
+		return libCache[name].then(next)
+	const current = lib(name)
+	libCache[name] = 
+	current.version()
+	.then(version => {
+		if (version == null) {
+			gutil.log('Installing '+name)
+			return current.install().then(_ => current.version())
+		}
+		return version
+	})
+	.then(
+		version => {
+			const parts = name.split(':')
+			gutil.log('Using '+parts[0]+' '+(parts[1]?parts[1]:version))
+		}, 
+		err => {
+			gutil.log(gutil.colors.red('Could not install '+name))
+			gutil.log(err)
+		}
+	)
+	.then(next)
+}
+
 function compile(stream, hxml, next) {
 	const target = Object.keys(hxml).filter(_ => TARGETS.indexOf(_) > -1)[0]
 	if (!target)
 		throw 'No target set'
-	const temp = path.join(osTmpdir(), 'gulp-haxe')
-	const location = {
-		original: hxml[target],
-		output: path.join(temp, md5Hex(toArgs(hxml)))
-	}
-	hxml[target] = location.output
-	const args = toArgs(hxml)
-	const haxe = haxeBinary.apply(null, args)
 
-	haxe.stdout.on('data', data => 
-		data.toString().split('\n').forEach(line => gutil.log(line))
-	)
-	haxe.stderr.on('data', haxeError.bind(null, target))
+	function run() {
+		const temp = path.join(osTmpdir(), 'gulp-haxe')
+		const location = {
+			original: hxml[target],
+			output: path.join(temp, md5Hex(toArgs(hxml)))
+		}
+		hxml[target] = location.output
+		const args = toArgs(hxml)
+		const haxe = haxeBinary.apply(null, args)
 
-	haxe.on('close', function (code) {
-		if (code != 0) return next()
+		haxe.stdout.on('data', data => 
+			data.toString().split('\n').forEach(line => gutil.log(line))
+		)
+		haxe.stderr.on('data', haxeError.bind(null, target))
 
-		fs.stat(location.output, (err, stats) => {
-			if (err) return next(err)
-			const files = []
-			const sourceMaps = Object.keys(hxml).indexOf('debug') > -1 && target == 'js';
-			if (stats.isDirectory())
-				glob(path.join(location.output, '**', '*'), (err, files) => {
-					if (err) return next(err)
-					addFiles(stream, files, location, next, sourceMaps)
-				})
-			else
-				addFiles(stream, [location.output], location, next, sourceMaps)
+		haxe.on('close', function (code) {
+			if (code != 0) return next()
+
+			fs.stat(location.output, (err, stats) => {
+				if (err) return next(err)
+				const files = []
+				const sourceMaps = Object.keys(hxml).indexOf('debug') > -1 && target == 'js';
+				if (stats.isDirectory())
+					glob(path.join(location.output, '**', '*'), (err, files) => {
+						if (err) return next(err)
+						addFiles(stream, files, location, next, sourceMaps)
+					})
+				else
+					addFiles(stream, [location.output], location, next, sourceMaps)
+			})
 		})
-	})
+	}
+
+	if ('lib' in hxml) {
+		eachAsync(
+			[].concat(hxml.lib),
+			installLib, 
+			err => {
+				if (err) console.log(err)
+				else run()
+			}
+		)
+	} else {
+		run()
+	}
 }
 
 module.exports = (source, options) => {
