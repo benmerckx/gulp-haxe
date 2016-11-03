@@ -55,7 +55,7 @@ function readHxml(source, cb) {
 			const cmd = parts.shift()
 			if (cmd.substr(0, 1) != '-')
 				throw 'To be implemented'
-			const key = cmd.substr(1)
+			let key = cmd.substr(1)
 			const value = parts.join(' ')
 
 			switch (key) {
@@ -68,6 +68,10 @@ function readHxml(source, cb) {
 					current = {}
 					break
 				default:
+					if (key.substr(0, 1) == '-') {
+						key = key.substr(1)
+						value = true
+					}
 					const obj = {}
 					obj[key] = value
 					combine(current, obj)
@@ -80,22 +84,27 @@ function readHxml(source, cb) {
 }
 
 function toArgs(hxml) {
-	const reponse = []
+	const response = []
 	Object.keys(hxml)
 	.map(key => {
 		const value = hxml[key]
 		const cmd = '-'+key
 		if (Array.isArray(value)) {
 			value.forEach(_ => {
-				reponse.push(cmd)
-				reponse.push(_)
+				response.push(cmd)
+				response.push(_)
 			})
+		} else if (typeof(value) === 'boolean') {
+			if (value) 
+				response.push(cmd)
 		} else {
-			reponse.push(cmd)
-			if(value) reponse.push(value)
+			response.push(cmd)
+			if(value) 
+				response.push(value)
 		}
 	})
-	return reponse
+
+	return response
 }
 
 function addFile(file, location, done, sourceMaps) {
@@ -108,13 +117,15 @@ function addFile(file, location, done, sourceMaps) {
 			path: filePath
 		})
 
-		if(sourceMaps){
+		if (sourceMaps) {
 			let fileString = data.toString('utf-8')
-			const map = convert.fromMapFileSource( fileString, path.dirname(location.output) )
-			fileString = convert.removeMapFileComments( fileString )
-			fileString += map.toComment()
-			data = new Buffer( fileString )
-			apply(vinylFile, map.toJSON())
+			const map = convert.fromMapFileSource(fileString, path.dirname(location.output))
+			if (map != null) {
+				fileString = convert.removeMapFileComments(fileString)
+				fileString += map.toComment()
+				data = new Buffer(fileString)
+				apply(vinylFile, map.toJSON())
+			}
 		}
 
 		vinylFile.contents = data
@@ -189,7 +200,7 @@ function compile(stream, hxml, next) {
 			fs.stat(location.output, (err, stats) => {
 				if (err) return next(err)
 				const files = []
-				const sourceMaps = Object.keys(hxml).indexOf('debug') > -1 && target == 'js';
+				const sourceMaps = 'debug' in hxml && hxml.debug && target == 'js'
 				if (stats.isDirectory())
 					glob(path.join(location.output, '**', '*'), (err, files) => {
 						if (err) return next(err)
