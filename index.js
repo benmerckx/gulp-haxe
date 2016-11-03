@@ -57,15 +57,12 @@ function readHxml(source, cb) {
 		data.toString()
 		.split('\n')
 		.map(Function.prototype.call, String.prototype.trim)
-		.filter(_ => _.substr(0, 1) != '#')
+		.filter(_ => _ != '' && _.substr(0, 1) != '#')
 		.forEach(function (command) {
 			const parts = command.split(' ')
 			const cmd = parts.shift()
 			if (cmd.substr(0, 1) != '-')
-				if(/^\s*$/.test(cmd))
-					return;
-				else
-					throw 'To be implemented'
+				throw 'To be implemented'
 			const key = cmd.substr(1)
 			const value = parts.join(' ')
 
