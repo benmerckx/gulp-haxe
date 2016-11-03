@@ -1,4 +1,4 @@
-# gulp-haxe
+# gulp-haxe [![NPM Version](https://img.shields.io/npm/v/gulp-haxe.svg)](https://www.npmjs.com/package/gulp-haxe)
 
 ```javascript
 const gulp = require('gulp')
