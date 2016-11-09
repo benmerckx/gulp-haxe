@@ -1,45 +1,63 @@
 # gulp-haxe [![NPM Version](https://img.shields.io/npm/v/gulp-haxe.svg)](https://www.npmjs.com/package/gulp-haxe)
 
-```javascript
-// Basic usage
+### Basic usage
 
+```javascript
 const gulp = require('gulp')
 const haxe = require('gulp-haxe')
 
-gulp.task('compile', function () {
+gulp.task('compile', function() {
   return haxe('build.hxml')
     .pipe(gulp.dest('bin'))
 })
 ```
 
-```javascript
-// Example: uglify and include sourcemaps
+### Compile multiple targets
 
-gulp.task('compile', function () {
+```javascript
+gulp.task('compile', function() {
+  return haxe([{
+    main: 'Client',
+    js: 'assets/main.js'
+  }, {
+    main: 'Server',
+    php: 'server'
+  }])
+    .pipe(gulp.dest('public'))
+})
+```
+
+### Using the completion server and watching for changes
+
+```javascript
+gulp.task('compile', function() {
+  return haxe(
+    {main: 'Client', js: 'client.js'},
+    {completion: 6000} // Starts the server and connects for you on port 6000
+  )
+    .pipe(gulp.dest('public'))
+})
+
+gulp.task('watch', function() {
+  gulp.watch(['src/**/*.hx'], ['compile'])
+})
+
+gulp.task('default', ['compile', 'watch'])
+```
+
+### Uglify and include sourcemaps
+
+```javascript
+gulp.task('compile', function() {
   return haxe({
-  	main: 'Main', 
-  	lib: ['tink_core', 'tink_macro'], 
-  	js: 'build.js',
+    main: 'Main', 
+    lib: ['tink_core', 'tink_macro'], 
+    js: 'build.js',
     debug: true // Required for sourcemaps
   })
     .pipe(sourcemaps.init())
     .pipe(uglify())
     .pipe(sourcemaps.write())
     .pipe(gulp.dest('bin'))
-})
-```
-
-```javascript
-// Compile multiple targets
-
-gulp.task('compile', function () {
-  return haxe([{
-  	main: 'Client',
-  	js: 'assets/main.js'
-  }, {
-  	main: 'Server',
-  	php: 'server'
-  }])
-    .pipe(gulp.dest('public'))
 })
 ```

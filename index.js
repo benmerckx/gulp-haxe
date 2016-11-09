@@ -15,6 +15,7 @@ const lib = require('./lib')
 
 const TARGETS = ['js', 'as3', 'swf', 'neko', 'php', 'cpp', 'cs', 'java', 'python', 'lua', 'hl']
 const libCache = {}
+const completionServers = {}
 
 function haxeError(target, data) {
 	gutil.log(' ')
@@ -92,7 +93,7 @@ function toArgs(hxml) {
 		if (Array.isArray(value)) {
 			value.forEach(_ => {
 				response.push(cmd)
-				response.push(_)
+				response.push(''+_)
 			})
 		} else if (typeof(value) === 'boolean') {
 			if (value) 
@@ -100,7 +101,7 @@ function toArgs(hxml) {
 		} else {
 			response.push(cmd)
 			if(value) 
-				response.push(value)
+				response.push(''+value)
 		}
 	})
 
@@ -174,10 +175,12 @@ function installLib(name, _, next) {
 	.then(next)
 }
 
-function compile(stream, hxml, next) {
+function compile(stream, hxml, options, next) {
 	const target = Object.keys(hxml).filter(_ => TARGETS.indexOf(_) > -1)[0]
-	if (!target)
+	if (!target) {
+		console.log(hxml)
 		throw 'No target set'
+	}
 
 	function run() {
 		const temp = path.join(osTmpdir(), 'gulp-haxe')
@@ -186,6 +189,10 @@ function compile(stream, hxml, next) {
 			output: path.join(temp, md5Hex(toArgs(hxml)))
 		}
 		hxml[target] = location.output
+				if (options.completion && (options.completion in completionServers)) {
+			hxml['-connect'] = ''+options.completion
+		}
+
 		const args = toArgs(hxml)
 		const haxe = haxeBinary.apply(null, args)
 
@@ -226,14 +233,30 @@ function compile(stream, hxml, next) {
 	}
 }
 
+function startCompletion(port, verbose) {
+	const args = ['--wait', ''+port]
+	if (verbose) args.unshift('-v')
+	const server = haxeBinary.apply(null, args)
+	server.stdout.pipe(process.stdout)
+	server.stderr.pipe(process.stderr)
+	server.on('close', code => {
+		delete completionServers[port]
+	})
+}
+
 module.exports = (source, options) => {
 	const stream = new Readable({objectMode: true})
 	stream._read = function () {}
 
+	if (options.completion && !(options.completion in completionServers)) {
+		startCompletion(options.completion, false)
+		completionServers[options.completion] = true
+	}
+
 	readHxml(source, all => {
 		eachAsync(
 			all,
-			(hxml, _, next) => compile(stream, hxml, next), 
+			(hxml, _, next) => compile(stream, hxml, options, next), 
 			err => {
 				if (err) console.log(err)
 				stream.push(null)
@@ -244,4 +267,4 @@ module.exports = (source, options) => {
 	return stream
 }
 
-exports.readHxml = readHxml
+module.exports.readHxml = readHxml
