@@ -15,7 +15,7 @@ module.exports = (target, data) => {
 				end = check[4],
 				err = check[5]
 
-			gutil.log('['+file+':'+line+'] '+err)
+			gutil.log('['+file.split('/').pop()+':'+line+'] '+err)
 		} else {
 			gutil.log(gutil.colors.green(data))
 		}
