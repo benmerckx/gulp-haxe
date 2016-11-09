@@ -32,7 +32,7 @@ gulp.task('compile', function() {
 ```javascript
 gulp.task('compile', function() {
   return haxe(
-    {main: 'Client', js: 'client.js'},
+    {cp: 'src', main: 'Client', js: 'client.js'},
     {completion: 6000} // Starts the server and connects for you on port 6000
   )
     .pipe(gulp.dest('public'))
