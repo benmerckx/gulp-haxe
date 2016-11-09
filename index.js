@@ -4,7 +4,7 @@ const haxelib = require('haxe').haxelib
 const gutil = require('gulp-util')
 const fs = require('fs')
 const path = require('path')
-const eachAsync = require('each-async')
+const async = require('async')
 const Readable = require('stream').Readable
 const osTmpdir = require('os-tmpdir')
 const md5Hex = require('md5-hex')
@@ -136,7 +136,7 @@ function addFile(file, location, done, sourceMaps) {
 }
 
 function addFiles(stream, files, location, done, sourceMaps) {
-	eachAsync(files, function (path, _, next) {
+	async.each(files, function (path, next) {
 		fs.stat(path, (err, stats) => {
 			if (err) return next(err)
 			if (stats.isDirectory()) return next()
@@ -149,7 +149,7 @@ function addFiles(stream, files, location, done, sourceMaps) {
 	}, done)
 }
 
-function installLib(name, _, next) {
+function installLib(name, next) {
 	if (name in libCache)
 		return libCache[name].then(next)
 	const current = lib(name)
@@ -220,7 +220,7 @@ function compile(stream, hxml, options, next) {
 	}
 
 	if ('lib' in hxml) {
-		eachAsync(
+		async.each(
 			[].concat(hxml.lib),
 			installLib, 
 			err => {
@@ -255,9 +255,9 @@ module.exports = (source, options) => {
 	}
 
 	readHxml(source, all => {
-		eachAsync(
+		async.each(
 			all,
-			(hxml, _, next) => compile(stream, hxml, options, next), 
+			(hxml, next) => compile(stream, hxml, options, next), 
 			err => {
 				if (err) console.log(err)
 				stream.push(null)
