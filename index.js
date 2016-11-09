@@ -248,6 +248,7 @@ module.exports = (source, options) => {
 	const stream = new Readable({objectMode: true})
 	stream._read = function () {}
 
+	if (!options) options = {}
 	if (options.completion && !(options.completion in completionServers)) {
 		startCompletion(options.completion, false)
 		completionServers[options.completion] = true
