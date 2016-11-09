@@ -11,20 +11,12 @@ const md5Hex = require('md5-hex')
 const glob = require('glob')
 const convert = require('convert-source-map')
 const apply = require('vinyl-sourcemaps-apply')
-const lib = require('./lib')
+const lib = require('./src/lib')
+const haxeError = require('./src/error')
 
 const TARGETS = ['js', 'as3', 'swf', 'neko', 'php', 'cpp', 'cs', 'java', 'python', 'lua', 'hl']
 const libCache = {}
 const completionServers = {}
-
-function haxeError(target, data) {
-	gutil.log(' ')
-	gutil.log(gutil.colors.red('['+target+'] Failed to compile'))
-	gutil.log(' ')
-	data.toString().split('\n').forEach(line => {
-		gutil.log(gutil.colors.green(line))
-	})
-}
 
 function combine(a, b) {
 	Object.keys(b).forEach(key => {
