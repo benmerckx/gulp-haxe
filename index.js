@@ -243,3 +243,5 @@ module.exports = (source, options) => {
 
 	return stream
 }
+
+exports.readHxml = readHxml
