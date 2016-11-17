@@ -1,6 +1,6 @@
 {
   "name": "gulp-haxe",
-  "version": "0.2.3",
+  "version": "0.2.4",
   "description": "Haxe for Gulp",
   "main": "index.js",
   "repository": {

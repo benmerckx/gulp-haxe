@@ -1,6 +1,7 @@
 'use strict'
 const gutil = require('gulp-util')
 const fs = require('fs')
+const logger = console
 
 function logLine(file, index, start, end) {
 	let line = file[index-1]
@@ -9,16 +10,19 @@ function logLine(file, index, start, end) {
 		const begin = line.substr(0, start)
 		const err = line.substr(start, end-start)
 		const stop = line.substr(end)
-		line = begin + gutil.colors.black.bgRed(err) + stop
+		line = gutil.colors.red('> '+index+' ')+gutil.colors.dim(begin.split("\t").join(' ')) + gutil.colors.red(err) + gutil.colors.dim(stop)
+	} else {
+		line = gutil.colors.dim('> '+index+' ')+gutil.colors.dim(line.split("\t").join(' '))
 	}
-	gutil.log('> '+index+': '+line)
+	logger.log(line)
 }
 
 module.exports = (target, data) => {
 	const files = {}
-	gutil.log(' ')
-	gutil.log(gutil.colors.red('['+target+'] Failed to compile'))
-	gutil.log(' ')
+	logger.log(' ')
+	logger.log(gutil.colors.red('> Failed to compile target: ')+target)
+
+	let lastError
 
 	data.toString().split('\n').forEach(data => {
 		const singlePattern = /([^:]+):(\d+): characters (\d+)-(\d+) : (.*)/g
@@ -44,22 +48,28 @@ module.exports = (target, data) => {
 		}
 
 		if (file) {
-			if (!(file in files))
-				files[file] = fs.readFileSync(file, 'utf-8').split("\n")
-			gutil.log(gutil.colors.green(err))
-			gutil.log(gutil.colors.magenta(file.split('/').pop()+':'+
-				(position.line ? position.line : position.from)
-			))
-			if (position.line) {
-				logLine(files[file], position.line-1)
-				logLine(files[file], position.line, position.start, position.end)
-				logLine(files[file], position.line+1)
-			} else {
-				for (let i = position.from; i < position.to; i++)
-					logLine(files[file], i)
-			}
+			const pos = JSON.stringify(position)
+			if (lastError != pos) {
+				lastError = pos
+				if (!(file in files))
+					files[file] = fs.readFileSync(file, 'utf-8').split("\n")
+				
+				logger.log(' ')
+				logger.log(gutil.colors.dim('> ')+file.split('/').pop()+gutil.colors.dim(':')+
+					(position.line ? position.line : position.from)
+				)
+				if (position.line) {
+					logLine(files[file], position.line-1)
+					logLine(files[file], position.line, position.start, position.end)
+					logLine(files[file], position.line+1)
+				} else {
+					for (let i = position.from; i < position.to; i++)
+						logLine(files[file], i)
+				}
+			}			
+			logger.log(gutil.colors.green('> '+err))
 		} else {
-			gutil.log(gutil.colors.green(data))
+			logger.log(gutil.colors.green(data))
 		}
 	})
 }
