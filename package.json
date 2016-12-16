@@ -1,6 +1,6 @@
 {
   "name": "gulp-haxe",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Haxe for Gulp",
   "main": "index.js",
   "repository": {
@@ -18,7 +18,7 @@
     "combine-source-map": "^0.7.2",
     "glob": "^7.1.1",
     "gulp-util": "^3.0.4",
-    "haxe": "4.0.0",
+    "haxe": "^4.0.0",
     "md5-hex": "^1.3.0",
     "os-tmpdir": "^1.0.2",
     "vinyl-sourcemaps-apply": "^0.2.1",
