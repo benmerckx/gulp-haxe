@@ -1,12 +1,13 @@
 'use strict'
-const haxelib = require('haxe').haxelib
+const nodeBin = require('./nodeBin')
+const haxelib = nodeBin('haxeshim/bin/haxelibshim.js')
 const async = require('async')
 
 const cache = {}
 const NON_EXISTENT = 'No such Project'
 
 const queue = async.queue((task, done) => {
-	const install = haxelib.apply(null, 
+	const install = haxelib( 
 		['install', '--always'].concat(task.name.split(':'))
 	)
 	let err = null
@@ -19,11 +20,10 @@ const queue = async.queue((task, done) => {
 	)
 	install.stderr.on('data', _ => err = _.toString())
 	install.on('close', code => {
-		if (code > 0) {
+		if (code > 0)
 			task.failure(err)
-		} else {
+		else
 			task.success()
-		}
 		done()
 	})
 })
@@ -38,7 +38,7 @@ module.exports = name => {
 		version: () => 
 			new Promise((success, _) => {
 				let version = null
-				const check = haxelib('list', info.name)
+				const check = haxelib(['list', info.name])
 				check.stdout.on('data', data => {
 					if (info.pinned) {
 						if (data.toString().indexOf(info.pinned) > -1)
@@ -48,7 +48,9 @@ module.exports = name => {
 						version = res[1]
 					}
 				})
-				check.on('close', () => success(version))
+				check.on('close', (code) => {
+					success(version)
+				})
 			}),
 		install: () => installing ? installing : installing =
 			new Promise((success, failure) => {

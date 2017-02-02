@@ -3,3 +3,5 @@
 /build.hxml
 /Main.hx
 /gulpfile.js
+/.haxerc
+*.lock

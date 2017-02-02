@@ -1,6 +1,8 @@
 'use strict'
-const haxeBinary = require('haxe').haxe
-const haxelib = require('haxe').haxelib
+const manifest = require('./package.json')
+const nodeBin = require('./src/nodeBin')
+const switchx = nodeBin('switchx/bin/switchx.js')
+const haxeshim = nodeBin('haxeshim/bin/haxeshim.js')
 const gutil = require('gulp-util')
 const fs = require('fs')
 const path = require('path')
@@ -17,6 +19,7 @@ const haxeError = require('./src/error')
 const TARGETS = ['js', 'as3', 'swf', 'neko', 'php', 'cpp', 'cs', 'java', 'python', 'lua', 'hl']
 const libCache = {}
 const completionServers = {}
+let haxeVersionCheck
 
 function combine(a, b) {
 	Object.keys(b).forEach(key => {
@@ -181,12 +184,12 @@ function compile(stream, hxml, options, next) {
 			output: path.join(temp, md5Hex(toArgs(hxml)))
 		}
 		hxml[target] = location.output
-				if (options.completion && (options.completion in completionServers)) {
+		if (options.completion && (options.completion in completionServers)) {
 			hxml['-connect'] = ''+options.completion
 		}
 
 		const args = toArgs(hxml)
-		const haxe = haxeBinary.apply(null, args)
+		const haxe = haxeshim(args)
 
 		haxe.stdout.on('data', data => 
 			data.toString().split('\n').forEach(line => gutil.log(line))
@@ -228,7 +231,7 @@ function compile(stream, hxml, options, next) {
 function startCompletion(port, verbose) {
 	const args = ['--wait', ''+port]
 	if (verbose) args.unshift('-v')
-	const server = haxeBinary.apply(null, args)
+	const server = haxeshim(args)
 	server.stdout.pipe(process.stdout)
 	server.stderr.pipe(process.stderr)
 	server.on('close', code => {
@@ -239,23 +242,44 @@ function startCompletion(port, verbose) {
 module.exports = (source, options) => {
 	const stream = new Readable({objectMode: true})
 	stream._read = function () {}
-
 	if (!options) options = {}
-	if (options.completion && !(options.completion in completionServers)) {
-		startCompletion(options.completion, false)
-		completionServers[options.completion] = true
+
+	function start() {
+		if (options.completion && !(options.completion in completionServers)) {
+			startCompletion(options.completion, false)
+			completionServers[options.completion] = true
+		}
+
+		readHxml(source, all => {
+			async.each(
+				all,
+				(hxml, next) => compile(stream, hxml, options, next), 
+				err => {
+					if (err) console.log(err)
+					stream.push(null)
+				}
+			)
+		})
 	}
 
-	readHxml(source, all => {
-		async.each(
-			all,
-			(hxml, next) => compile(stream, hxml, options, next), 
-			err => {
-				if (err) console.log(err)
-				stream.push(null)
-			}
-		)
-	})
+	if (haxeVersionCheck == null)
+		haxeVersionCheck = new Promise(function(success, _) {
+			let version = 'latest'
+			if ('haxe' in manifest && 'version' in manifest.haxe)
+				version = manifest.haxe.version
+
+			fs.writeFileSync('.haxerc', JSON.stringify({
+				version: version,
+				resolveLibs: 'haxelib'
+			}))
+
+			gutil.log('Using haxe '+version)
+			const installation = switchx(['install'])
+			installation.stderr.on('data', data => gutil.log(data.toString()))
+			installation.on('exit', () => success())
+		})
+
+	haxeVersionCheck.then(start)
 
 	return stream
 }

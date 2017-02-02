@@ -1,5 +1,17 @@
 # gulp-haxe [![NPM Version](https://img.shields.io/npm/v/gulp-haxe.svg)](https://www.npmjs.com/package/gulp-haxe)
 
+### Set a specific haxe version
+
+Gulp-haxe defaults to the latest haxe version. It includes [switchx](https://github.com/lix-pm/switchx) to set your prefered haxe version which can be defined in `package.json` as haxe.version:
+
+```javascript
+{
+  "haxe": {
+    "version": "3.4.0"
+  }
+}
+```
+
 ### Basic usage
 
 ```javascript
