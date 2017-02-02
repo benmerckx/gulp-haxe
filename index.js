@@ -1,5 +1,5 @@
 'use strict'
-const manifest = require('./package.json')
+const manifest = require(process.cwd()+'/package.json')
 const nodeBin = require('./src/nodeBin')
 const switchx = nodeBin('switchx/bin/switchx.js')
 const haxeshim = nodeBin('haxeshim/bin/haxeshim.js')
