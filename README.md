@@ -41,6 +41,8 @@ gulp.task('compile', function() {
 
 ### Using the completion server and watching for changes
 
+Note: this is momentarily unsupported since 0.3+
+
 ```javascript
 gulp.task('compile', function() {
   return haxe(
