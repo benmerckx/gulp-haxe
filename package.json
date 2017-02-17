@@ -3,6 +3,9 @@
   "version": "0.3.0",
   "description": "Haxe for Gulp",
   "main": "index.js",
+  "scripts": {
+    "install": "switchx"
+  },
   "repository": {
     "type": "git",
     "url": "git://github.com/benmerckx/gulp-haxe.git"
