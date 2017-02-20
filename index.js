@@ -181,7 +181,7 @@ function compile(stream, hxml, options, next) {
 		const temp = path.join(osTmpdir(), 'gulp-haxe')
 		const location = {
 			original: hxml[target],
-			output: path.join(temp, md5Hex(toArgs(hxml)))
+			output: path.join(temp, md5Hex(process.cwd() + toArgs(hxml)))
 		}
 		hxml[target] = location.output
 		if (options.completion && (options.completion in completionServers)) {
