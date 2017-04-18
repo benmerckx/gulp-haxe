@@ -47,7 +47,7 @@ module.exports = (target, data) => {
 			err = check[5]
 		}
 
-		if (file) {
+		if (file && fs.existsSync(file)) {
 			const pos = JSON.stringify(position)
 			if (lastError != pos) {
 				lastError = pos
