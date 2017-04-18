@@ -16,7 +16,7 @@ const apply = require('vinyl-sourcemaps-apply')
 const lib = require('./src/lib')
 const haxeError = require('./src/error')
 
-const TARGETS = ['js', 'as3', 'swf', 'neko', 'php', 'cpp', 'cs', 'java', 'python', 'lua', 'hl']
+const TARGETS = ['xml', 'js', 'as3', 'swf', 'neko', 'php', 'cpp', 'cs', 'java', 'python', 'lua', 'hl']
 const libCache = {}
 const completionServers = {}
 let haxeVersionCheck
