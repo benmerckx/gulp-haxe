@@ -38,7 +38,7 @@ module.exports = name => {
 		version: () => 
 			new Promise((success, _) => {
 				let version = null
-				const check = haxelib(['list', info.name])
+				const check = haxelib(['list', info.name.replace(/\./g, ",")])
 				check.stdout.on('data', data => {
 					if (info.pinned) {
 						if (data.toString().indexOf(info.pinned) > -1)
