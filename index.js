@@ -197,7 +197,7 @@ function compile(stream, hxml, options, next) {
 		haxe.stderr.on('data', haxeError.bind(null, target))
 
 		haxe.on('close', function (code) {
-			if (code != 0) return next()
+			if (code != 0) return next('Exited with error code: ' + code)
 
 			fs.stat(location.output, (err, stats) => {
 				if (err) return next(err)
