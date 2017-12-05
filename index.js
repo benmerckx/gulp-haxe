@@ -255,8 +255,15 @@ module.exports = (source, options) => {
 				all,
 				(hxml, next) => compile(stream, hxml, options, next), 
 				err => {
-					if (err) console.log(err)
-					stream.push(null)
+					if(!err) {
+						stream.push(null)
+						return
+					}
+
+					console.log(err)
+
+					if(!options.exitOnError) return
+					stream.destroy(new Error(err))
 				}
 			)
 		})

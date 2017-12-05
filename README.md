@@ -73,3 +73,12 @@ gulp.task('compile', function() {
     .pipe(gulp.dest('bin'))
 })
 ```
+
+### Adding an exit on error flag will result on stream termination and return an error
+
+```javascript
+gulp.task('compile', function() {
+  return haxe('build.hxml', {exitOnError:true})
+    .pipe(gulp.dest('test'))
+})
+```
